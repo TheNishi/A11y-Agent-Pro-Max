@@ -1,0 +1,29 @@
+version: "1.2"
+name: "a11y-env"
+description: "A Reinforcement Learning environment for training agents to fix web accessibility (A11y) issues. Agents interact with a DOM-like representation to improve WCAG compliance."
+author: "Antigravity Agent"
+tags: ["web", "accessibility", "a11y", "llm-agent", "software-engineering"]
+env_type: "http"
+
+endpoints:
+  reset: "/reset"
+  step: "/step"
+  state: "/state"
+
+tasks:
+  - id: "easy-alt-text"
+    name: "General Accessibility Fixer"
+    description: "Basic WCAG check: Identify and add descriptive alt text to all <img> tags and set the <html> lang attribute."
+    difficulty: "easy"
+  - id: "adaptive-vision"
+    name: "Vision-Impaired Optimization"
+    description: "Adaptive Task: Optimize the page for screen readers by adding ARIA labels to interactive elements and descriptive alt text to images."
+    difficulty: "medium"
+  - id: "adaptive-motor"
+    name: "Motor-Impaired Navigation"
+    description: "Adaptive Task: Ensure all elements are reachable via keyboard by adding proper landmarks and ensuring labels are correctly associated with inputs."
+    difficulty: "medium"
+  - id: "dynamic-cognitive"
+    name: "Cognitive Impairment Optimization"
+    description: "Adaptive Task: Simplify complex DOM structures and ensure clear landmarks to support users with cognitive accessibility needs."
+    difficulty: "hard"

@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+beautifulsoup4
+lxml
+requests
+openai
+pydantic
+python-multipart
+streamlit
+pandas
+plotly
+streamlit-lottie
