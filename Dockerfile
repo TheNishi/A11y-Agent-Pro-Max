@@ -5,12 +5,16 @@ WORKDIR /app
 # Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
+    nginx \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
+
+# Nginx config
+COPY nginx.conf /etc/nginx/nginx.conf
 
 # Ensure start script is executable
 RUN chmod +x start.sh
