@@ -5,10 +5,13 @@ import requests
 from typing import List
 from openai import OpenAI
 
-def get_fix_command(html: str, issues: list, model_name: str = "gpt-4o", api_key: str = None, custom_prompt: str = "") -> List[str]:
+def get_fix_command(html: str, issues: list, model_name: str = "gpt-4o", api_key: str = None, custom_prompt: str = "") -> dict:
     """
     Advanced agent that can rectify multiple issues simultaneously.
+    Returns a dictionary with 'reasoning' and 'commands'.
     """
+    api_key = api_key or os.getenv("OPENAI_API_KEY")
+    
     if not api_key:
         # Batch fallback for demonstration speed
         issues_str = str(issues).lower()
@@ -16,15 +19,15 @@ def get_fix_command(html: str, issues: list, model_name: str = "gpt-4o", api_key
         if "missing standard landmark" in issues_str: commands.append('wrap_element(".nav", "nav")')
         if "lacks alt text" in issues_str: commands.append('set_attr("#main-logo", "alt", "Company Logo")')
         if "missing <h1>" in issues_str: commands.append('insert_landmark("body", "h1")')
-        return commands if commands else ['set_attr("html", "lang", "en")']
+        return {"reasoning": "Fallback rules applied.", "commands": commands if commands else ['set_attr("html", "lang", "en")']}
 
     try:
-        from openai import OpenAI
         client = OpenAI(api_key=api_key)
         
         prompt = f"""
-### ROLE: SENIOR ACCESSIBILITY ENGINEER
-### TASK: FIX ALL ISSUES FOR {custom_prompt.upper()} PROFILE AT ONCE
+### ROLE: LEAD ACCESSIBILITY ARCHITECT (TOP 1% WORLDWIDE)
+### TASK: SYSTEMATICALLY RESOLVE ALL WCAG 2.1 VIOLATIONS
+### USER PROFILE: {custom_prompt.upper()}
 
 HTML SOURCE:
 {html}
@@ -32,88 +35,98 @@ HTML SOURCE:
 VIOLATIONS TO RESOLVE:
 {chr(10).join(issues)}
 
-### COMMANDS:
-1. `set_attr(selector, attr, val)`
-2. `change_tag(selector, next_tag)`
-3. `add_aria(selector, type, val)`
-4. `wrap_element(selector, tag)`
-5. `remove_element(selector)`
-6. `insert_landmark(parent_selector, tag_name)`
+### AVAILABLE COMMANDS:
+1. `set_attr(selector, attr, val)` - Set attribute (e.g., lang, alt, aria-label)
+2. `change_tag(selector, next_tag)` - Change tag type (e.g., div to nav)
+3. `add_aria(selector, type, val)` - Add aria-{{type}} attribute
+4. `wrap_element(selector, tag)` - Wrap element in a new tag
+5. `remove_element(selector)` - Remove redundant/harmful elements
+6. `insert_landmark(parent_selector, tag_name)` - Insert a semantic landmark (header, main, footer, etc.)
 
 ### REQUIREMENT:
-Return a JSON object with two keys:
-'reasoning': string
-'commands': list of strings containing the commands in order of application.
-
-GOAL: Rectify as many issues as possible in ONE TURN.
+Analyze the HTML and the issues. Plan a single high-impact turn that fixes as many violations as possible.
+Return a JSON object:
+{{
+  "reasoning": "Step-by-step logic for the chosen fixes",
+  "commands": ["cmd1", "cmd2", ...]
+}}
 """
         response = client.chat.completions.create(
             model=model_name or "gpt-4o",
             messages=[{"role": "user", "content": prompt}],
             response_format={ "type": "json_object" }
         )
-        data = json.loads(response.choices[0].message.content)
-        return data.get("commands", [])
+        return json.loads(response.choices[0].message.content)
         
     except Exception as e:
-        print(f"Agent Batch Error: {e}")
-        return []
+        return {"reasoning": f"Error: {e}", "commands": []}
 
 def run_inference(task_id: str = "adaptive-vision", env_url="http://127.0.0.1:8000"):
     """
-    Terminal CLI for the A11y-Agent Pro.
-    Demonstrates solving a task in a single Turn.
+    OpenEnv Standardized Inference Loop.
+    Outputs required [START], [STEP], [END] blocks for validation.
     """
-    print(f"\n[🚀] INITIALIZING TASK: {task_id}")
-    print("-" * 50)
+    # Required for validator parsing
+    print(f"[START] {task_id}")
     
     try:
-        # 1. Reset
+        # 1. Reset Environment
         resp = requests.post(f"{env_url}/reset?task_id={task_id}")
         data = resp.json()["observation"]
         session_id = data["metadata"]["session_id"]
         profile = data["metadata"].get("profile", "general")
         initial_score = data["accessibility_score"]
         
-        print(f"[📍] Profile: {profile.upper()}")
-        print(f"[📊] Initial Health: {int(initial_score * 100)}%")
-        print(f"[🔍] Detected {len(data['identified_issues'])} violations.")
-
-        # 2. Batch Inference
-        print("\n[🧠] AI Agent is thinking in parallel...")
-        cmds = get_fix_command(data['html_content'], data['identified_issues'], custom_prompt=profile)
+        step_count = 0
+        done = False
+        current_score = initial_score
         
-        if not cmds:
-            print("[❌] Agent failed to generate a plan.")
-            return
+        while not done and step_count < 5:
+            step_count += 1
+            
+            # Get issues from current observation
+            issues = data.get("identified_issues", [])
+            html = data.get("html_content", "")
+            
+            if not issues:
+                break
+                
+            # Agent logic
+            plan = get_fix_command(html, issues, custom_prompt=profile)
+            cmds = plan.get("commands", [])
+            reasoning = plan.get("reasoning", "No reasoning provided.")
+            
+            if not cmds:
+                break
 
-        print(f"[⚡] Generated {len(cmds)} rectification actions.")
-        for i, c in enumerate(cmds):
-            print(f"    {i+1}. {c}")
+            # Execute Step
+            step_resp = requests.post(f"{env_url}/step?session_id={session_id}", json={"commands": cmds})
+            step_result = step_resp.json()
+            
+            data = step_result["observation"]
+            reward = step_result.get("reward", 0)
+            done = step_result.get("done", False)
+            current_score = data["accessibility_score"]
 
-        # 3. Batch Step
-        print("\n[🛠️] Executing Batch Rectification...")
-        step_resp = requests.post(f"{env_url}/step?session_id={session_id}", json={"commands": cmds})
-        final_data = step_resp.json()["observation"]
-        final_score = final_data["accessibility_score"]
-        
-        print("-" * 50)
-        print(f"[✅] OPTIMIZATION COMPLETE")
-        print(f"[📈] Final Health: {int(final_score * 100)}%")
-        print(f"[🎉] Improvement: +{int((final_score - initial_score)*100)}%")
-        
-        if final_score >= 0.99:
-            print("\n🏆 PROJECT WINNING STATE ACHIEVED!")
-        else:
-            print(f"\nRemaining Issues: {len(final_data['identified_issues'])}")
+            # Required [STEP] output
+            print(f"[STEP] step-{step_count} reward-{reward}")
+            
+            # Professional Logging (Optional but helpful)
+            # print(f"  > Reasoning: {reasoning}")
+            # print(f"  > Score: {current_score} (Progress: +{reward})")
+
+        # 3. Final summary
+        # print(f"\n[🏁] Task Finished. Final Score: {current_score}")
 
     except Exception as e:
-        print(f"[🔴] Terminal Execution Error: {e}")
+        print(f"Error during inference: {e}")
+    finally:
+        # Required for validator parsing
+        print("[END]")
 
 if __name__ == "__main__":
-    # Import list for CLI
-    from typing import List
     import sys
-    
+    # Use environment variables if available
+    env_url = os.getenv("API_BASE_URL", "http://127.0.0.1:8000")
     task = sys.argv[1] if len(sys.argv) > 1 else "adaptive-vision"
-    run_inference(task)
+    run_inference(task, env_url=env_url)
