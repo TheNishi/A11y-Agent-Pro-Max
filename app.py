@@ -123,6 +123,10 @@ async def state(session_id: str):
 async def root():
     return {"status": "A11y-Env Up", "version": "1.0", "tasks": list(TASKS.keys())}
 
-if __name__ == "__main__":
+def main():
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)
+
+if __name__ == "__main__":
+    main()
+

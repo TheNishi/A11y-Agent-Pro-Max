@@ -11,7 +11,9 @@ from streamlit_lottie import st_lottie
 
 import os
 API_URL = os.environ.get("API_BASE_URL", "http://127.0.0.1:8000")
-THEME_COLOR = "#6366f1" # Modern Indigo
+THEME_COLOR = "#8b5cf6" # Vibrant Violet
+ACCENT_COLOR = "#06b6d4" # Cyber Cyan
+
 
 st.set_page_config(
     page_title="A11y-Agent Pro Max",
@@ -130,97 +132,79 @@ st.markdown(f"""
     
     /* Requirement Card */
     .req-card {{
-        color: #e2e8f0;
-        font-size: 0.95rem;
+        background: rgba(139, 92, 246, 0.05);
+        border: 1px solid rgba(139, 92, 246, 0.2);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 25px;
     }}
     .req-label {{
-        font-size: 0.75rem;
-        color: #9ca3af;
+        font-size: 0.7rem;
+        color: #a78bfa;
         text-transform: uppercase;
-        letter-spacing: 0.05em;
-        margin-bottom: 4px;
+        letter-spacing: 0.1em;
+        font-weight: 700;
+        margin-bottom: 8px;
+    }}
+    .req-text {{
+        font-size: 1.1rem;
+        font-weight: 500;
+        line-height: 1.4;
+        color: #f8fafc;
     }}
     
-    /* Glass Cards & Violation Cards */
-    .glass-card {{
-        background: #202129;
-        border: 1px solid #374151;
-        border-radius: 12px;
-        padding: 16px;
-        margin-bottom: 15px;
-        font-size: 0.9rem;
-    }}
-    
+    /* Violation Cards */
     .violation-card {{
-        background: #2a151b;
-        border-left: 3px solid #f43f5e;
-        border-radius: 8px;
+        border-radius: 12px;
         padding: 16px;
         margin-bottom: 12px;
         display: flex;
-        gap: 12px;
-        align-items: flex-start;
-        font-size: 0.9rem;
-        color: #f1f5f9;
-        position: relative;
+        gap: 15px;
+        align-items: center;
+        transition: all 0.2s ease;
+        border: 1px solid transparent;
+    }}
+    .violation-crit {{
+        background: rgba(244, 63, 94, 0.1);
+        border-color: rgba(244, 63, 94, 0.2);
+        color: #fda4af;
+    }}
+    .violation-warn {{
+        background: rgba(245, 158, 11, 0.1);
+        border-color: rgba(245, 158, 11, 0.2);
+        color: #fcd34d;
+    }}
+    .violation-info {{
+        background: rgba(6, 182, 212, 0.1);
+        border-color: rgba(6, 182, 212, 0.2);
+        color: #a5f3fc;
     }}
     
-    .violation-card .icon-right {{
-        position: absolute;
-        right: 16px;
-        top: 16px;
-        background: rgba(255,255,255,0.05);
-        color: #9ca3af;
-        width: 24px;
-        height: 24px;
+    .status-badge {{
+        font-size: 0.65rem;
+        padding: 2px 8px;
+        border-radius: 4px;
+        font-weight: 700;
+        text-transform: uppercase;
+    }}
+    
+    /* Preview Container */
+    .preview-box {{
+        background: white;
+        border-radius: 16px;
+        border: 8px solid #2e2f38;
+        box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+        overflow: hidden;
+    }}
+    
+    .preview-header {{
+        background: #2e2f38;
+        padding: 8px 16px;
         display: flex;
         align-items: center;
-        justify-content: center;
-        border-radius: 50%;
-        font-size: 12px;
-        font-style: italic;
+        gap: 8px;
     }}
-    
-    /* Live Evolution Preview Container */
-    .preview-container {{
-        background: #111217;
-        border: 1px solid #2e2f38;
-        border-radius: 24px;
-        padding: 24px;
-        position: relative;
-        overflow: hidden;
-        margin-top: 20px;
-    }}
-    
-    .status-dot {{
-        height: 8px;
-        width: 8px;
-        background-color: #06b6d4;
-        border-radius: 50%;
-        display: inline-block;
-        margin-right: 8px;
-        box-shadow: 0 0 8px #06b6d4;
-    }}
-    
-    /* Buttons */
-    .stButton>button {{
-        border-radius: 12px;
-        background: linear-gradient(135deg, #8b5cf6, #6366f1);
-        color: white;
-        border: none;
-        padding: 12px 28px;
-        font-weight: 600;
-        width: 100%;
-        transition: all 0.3s ease;
-    }}
-    .stButton>button:hover {{
-        transform: translateY(-2px);
-        box-shadow: 0 8px 20px rgba(139, 92, 246, 0.4);
-    }}
-    
-    /* Pulse anim */
-    @keyframes pulse {{ 0% {{ opacity: 0.8; transform: scale(1); }} 50% {{ opacity: 1; transform: scale(1.1); }} 100% {{ opacity: 0.8; transform: scale(1); }} }}
-    .animate-pulse {{ animation: pulse 2s infinite; }}
+    .dot {{ height: 10px; width: 10px; border-radius: 50%; display: inline-block; }}
 </style>
 """, unsafe_allow_html=True)
 
@@ -324,15 +308,33 @@ def main():
     if score >= 1.0:
         st.balloons()
     
-    st.markdown('<div class="glass-card" style="padding: 15px 20px;">', unsafe_allow_html=True)
-    health_cols = st.columns([1, 4])
-    with health_cols[0]:
-        delta_val = int((score - st.session_state.history[0]['score']) * 100) if getattr(st.session_state, 'history', []) and len(st.session_state.history) > 0 else 0
-        st.metric("Global Health Index", f"{int(score * 100)}%", delta=f"{delta_val}%" if delta_val != 0 else None)
-    with health_cols[1]:
-        st.markdown("<div style='margin-top: 15px;'></div>", unsafe_allow_html=True)
-        st.progress(float(score))
-    st.markdown('</div>', unsafe_allow_html=True)
+    # Gauge Chart for Health
+    fig = go.Figure(go.Indicator(
+        mode = "gauge+number+delta",
+        value = score * 100,
+        domain = {'x': [0, 1], 'y': [0, 1]},
+        title = {'text': "WCAG Health Index", 'font': {'size': 18, 'color': "white"}},
+        delta = {'reference': (st.session_state.history[0]['score'] * 100) if len(st.session_state.history) > 0 else 0, 'increasing': {'color': "#22c55e"}},
+        gauge = {
+            'axis': {'range': [None, 100], 'tickwidth': 1, 'tickcolor': "white"},
+            'bar': {'color': "#8b5cf6"},
+            'bgcolor': "rgba(0,0,0,0)",
+            'borderwidth': 2,
+            'bordercolor': "#374151",
+            'steps': [
+                {'range': [0, 50], 'color': 'rgba(244, 63, 94, 0.1)'},
+                {'range': [50, 85], 'color': 'rgba(245, 158, 11, 0.1)'},
+                {'range': [85, 100], 'color': 'rgba(34, 197, 94, 0.1)'}
+            ],
+            'threshold': {
+                'line': {'color': "#06b6d4", 'width': 4},
+                'thickness': 0.75,
+                'value': 99
+            }
+        }
+    ))
+    fig.update_layout(paper_bgcolor="rgba(0,0,0,0)", font={'color': "white", 'family': "Outfit"}, height=250, margin=dict(t=50, b=20, l=20, r=20))
+    st.plotly_chart(fig, use_container_width=True)
     
     c1, spacer, c2 = st.columns([1, 0.1, 1.2])
     
@@ -340,27 +342,37 @@ def main():
         st.markdown(f'<div class="section-header"><span style="color:#f97316;">🎯</span> Target: {profile.replace("_", " ").title()}</div>', unsafe_allow_html=True)
         st.markdown(f"""
             <div class="req-card">
-                <div class="req-label">REQUIREMENT:</div>
-                <div style="font-weight: 500;">{task_desc} <span style="color:#8b5cf6;">→</span></div>
+                <div class="req-label">SYSTEM GOAL / USER PROFILE</div>
+                <div class="req-text">{task_desc}</div>
             </div>
         """, unsafe_allow_html=True)
         
-        st.markdown('<div class="section-header"><span style="color:#f43f5e;">🚨</span> Violations</div>', unsafe_allow_html=True)
+        st.markdown('<div class="section-header"><span style="color:#f43f5e;">⚡</span> Real-time Violations</div>', unsafe_allow_html=True)
         
         if not obs["identified_issues"]:
-            st.markdown('<div class="violation-card" style="border-left-color: #22c55e;"><span style="color:#22c55e; font-weight:bold;">Success:</span> Universal Accessibility 100% Achieved!</div>', unsafe_allow_html=True)
+            st.markdown("""
+                <div class="violation-card" style="background: rgba(34, 197, 94, 0.1); border-color: rgba(34, 197, 94, 0.2); color: #86efac;">
+                    <span style="font-size: 1.5rem;">🎉</span>
+                    <div>
+                        <div style="font-weight: 700;">UNIVERSAL ACCESSIBILITY ACHIEVED</div>
+                        <div style="font-size: 0.8rem; opacity: 0.8;">The DOM structure represents gold-standard WCAG 2.1 mapping.</div>
+                    </div>
+                </div>
+            """, unsafe_allow_html=True)
         else:
             for issue in obs["identified_issues"]:
-                # Parse issue type
+                # Parse issue level
+                level = "crit" if "Crit" in issue else "warn" if "Warn" in issue or "Violation" in issue else "info"
+                css_class = f"violation-{level}"
+                badge_text = level.upper()
+                
                 parts = issue.split(":", 1)
-                issue_type = parts[0] if len(parts)>1 else "Issue"
-                issue_text = parts[1] if len(parts)>1 else issue
+                issue_text = parts[1].strip() if len(parts)>1 else issue
+                
                 st.markdown(f"""
-                <div class="violation-card">
-                    <div>
-                        <span style="color:#f43f5e; font-weight:600;">{issue_type}:</span> {issue_text}
-                    </div>
-                    <div class="icon-right">i</div>
+                <div class="violation-card {css_class}">
+                    <div class="status-badge" style="background: currentColor; color: #111;">{badge_text}</div>
+                    <div style="font-size: 0.9rem; font-weight: 500;">{issue_text}</div>
                 </div>
                 """, unsafe_allow_html=True)
 
@@ -368,27 +380,32 @@ def main():
         st.markdown('<div class="section-header"><span style="color:#06b6d4;">🌐</span> Live Evolution Preview</div>', unsafe_allow_html=True)
         # Render the HTML in a safe iframe with new preview styling
         with st.container():
-            st.markdown('<div class="preview-container">', unsafe_allow_html=True)
-            
-            # Simple HUD simulation header
             st.markdown("""
-                <div style="position:absolute; top:20px; left:20px; z-index:10; background:rgba(0,0,0,0.7); border:1px solid #06b6d4; padding:4px 12px; border-radius:20px; color:#06b6d4; font-size:0.7rem; font-weight:700; letter-spacing:1px; display:flex; align-items:center; gap:6px;">
-                    <span class="status-dot"></span> RECONSTRUCTING...
-                </div>
+                <div class="preview-box">
+                    <div class="preview-header">
+                        <span class="dot" style="background:#ff5f56;"></span>
+                        <span class="dot" style="background:#ffbd2e;"></span>
+                        <span class="dot" style="background:#27c93f;"></span>
+                        <span style="color:#9ca3af; font-size:0.7rem; margin-left:10px; font-weight:600;">AGENTIC_PREVIEW_v4.0</span>
+                    </div>
             """, unsafe_allow_html=True)
 
-            preview_html = f"<style>body{{font-family:'Outfit',sans-serif; padding:15px; background:white; color:#111; margin-top:50px; border-radius:8px;}} img{{max-width:100%; border:1px dashed #ccc;}}</style>{obs['html_content']}"
+            preview_html = f"<style>body{{font-family:'Outfit',sans-serif; padding:20px; background:white; color:#111; border-radius:4px;}} img{{max-width:100%; border:1px dashed #ccc; padding:4px;}} landmark{{ border: 1px solid #ddd; padding: 4px; display: block; margin: 4px 0; }}</style>{obs['html_content']}"
             components.html(preview_html, height=450, scrolling=True)
             
             # Overlay HUD branding
             st.markdown("""
-                <div style="position:absolute; bottom:20px; left:20px; right:20px; background:rgba(0,0,0,0.8); backdrop-filter:blur(5px); padding:16px; border-radius:12px;">
-                    <div style="color:#9ca3af; font-size:0.6rem; letter-spacing:2px; margin-bottom:4px;">NODE_REPAIR_SEQUENCE_74</div>
-                    <div style="color:white; font-size:0.9rem; font-weight:700; letter-spacing:0.5px;">LIVE NEURAL MAPPING</div>
+                    <div style="background:#1a1b21; padding:16px; border-top:1px solid #374151; display:flex; justify-content:space-between; align-items:center;">
+                        <div>
+                            <div style="color:#9ca3af; font-size:0.6rem; letter-spacing:2px; margin-bottom:2px;">NEURAL_MAPPING_SEQUENCE</div>
+                            <div style="color:white; font-size:0.8rem; font-weight:700;">LIVE_DOM_EVOLUTION</div>
+                        </div>
+                        <div style="background:rgba(6,182,212,0.1); color:#06b6d4; padding:4px 10px; border-radius:6px; font-size:0.7rem; font-weight:700; border:1px solid rgba(6,182,212,0.3);">
+                            SYNC_ACTIVE
+                        </div>
+                    </div>
                 </div>
             """, unsafe_allow_html=True)
-            
-            st.markdown('</div>', unsafe_allow_html=True)
 
 
         st.write("")

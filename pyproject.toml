@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "a11y-env"
+version = "0.1.0"
+description = "A11y Agent Pro Max Environment"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "fastapi",
+    "uvicorn",
+    "beautifulsoup4",
+    "lxml",
+    "requests",
+    "openai",
+    "pydantic",
+    "python-multipart",
+    "streamlit",
+    "pandas",
+    "plotly",
+    "streamlit-lottie",
+    "openenv-core>=0.2.0"
+]
+
+[project.scripts]
+server = "app:main"

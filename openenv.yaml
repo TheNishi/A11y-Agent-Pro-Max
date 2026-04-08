@@ -1,4 +1,4 @@
-version: "1.2"
+version: "1.0"
 name: "a11y-env"
 description: "A Reinforcement Learning environment for training agents to fix web accessibility (A11y) issues. Agents interact with a DOM-like representation to improve WCAG compliance."
 author: "Antigravity Agent"
@@ -9,6 +9,7 @@ endpoints:
   reset: "/reset"
   step: "/step"
   state: "/state"
+
 
 tasks:
   - id: "easy-alt-text"
