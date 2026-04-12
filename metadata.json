@@ -1,0 +1,8 @@
+{
+  "name": "a11y-env",
+  "version": "1.0.0",
+  "author": "Nishikant Kumar",
+  "sdk": "docker",
+  "env_type": "http",
+  "tasks_count": 5
+}

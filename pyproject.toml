@@ -1,7 +1,3 @@
-[build-system]
-requires = ["setuptools>=61.0"]
-build-backend = "setuptools.build_meta"
-
 [project]
 name = "a11y-env"
 version = "0.1.0"
@@ -9,6 +5,7 @@ description = "A11y Agent Pro Max Environment"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
+    "openenv-core>=0.2.0",
     "fastapi",
     "uvicorn",
     "beautifulsoup4",
@@ -20,9 +17,18 @@ dependencies = [
     "streamlit",
     "pandas",
     "plotly",
-    "streamlit-lottie",
-    "openenv-core>=0.2.0"
+    "streamlit-lottie"
 ]
 
 [project.scripts]
 server = "app:main"
+openenv-server = "app:main"
+a11y-server = "app:main"
+run-env = "app:main"
+
+[tool.setuptools]
+py-modules = ["app", "environment", "models", "inference"]
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"

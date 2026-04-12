@@ -1,30 +1,44 @@
-version: "1.0"
+version: "1.0.0"
 name: "a11y-env"
 description: "A Reinforcement Learning environment for training agents to fix web accessibility (A11y) issues. Agents interact with a DOM-like representation to improve WCAG compliance."
-author: "Antigravity Agent"
+author: "Nishikant Kumar"
 tags: ["web", "accessibility", "a11y", "llm-agent", "software-engineering"]
-env_type: "http"
+env_type: http
+
+env_vars:
+  API_BASE_URL: "https://api.openai.com/v1"
+  MODEL_NAME: "gpt-4o"
+  HF_TOKEN: ""
 
 endpoints:
   reset: "/reset"
   step: "/step"
   state: "/state"
+  grade: "/grade"
 
+server:
+  command: "uvicorn app:app --host 0.0.0.0 --port 8000"
+  port: 8000
 
 tasks:
   - id: "easy-alt-text"
     name: "General Accessibility Fixer"
-    description: "Basic WCAG check: Identify and add descriptive alt text to all <img> tags and set the <html> lang attribute."
+    description: "Fix a webpage missing basic accessibility features like language tags and image alt text."
     difficulty: "easy"
-  - id: "adaptive-vision"
-    name: "Vision-Impaired Optimization"
-    description: "Adaptive Task: Optimize the page for screen readers by adding ARIA labels to interactive elements and descriptive alt text to images."
+  - id: "vision-aria"
+    name: "ARIA Labelling Expert"
+    description: "Implement aria-labels for interactive elements that lack text content."
     difficulty: "medium"
-  - id: "adaptive-motor"
-    name: "Motor-Impaired Navigation"
-    description: "Adaptive Task: Ensure all elements are reachable via keyboard by adding proper landmarks and ensuring labels are correctly associated with inputs."
+  - id: "motor-labels"
+    name: "Motor-Impaired Navigation Support"
+    description: "Ensure all form inputs have associated labels for easier targeting and identification."
     difficulty: "medium"
-  - id: "dynamic-cognitive"
-    name: "Cognitive Impairment Optimization"
-    description: "Adaptive Task: Simplify complex DOM structures and ensure clear landmarks to support users with cognitive accessibility needs."
+  - id: "cognitive-landmarks"
+    name: "Cognitive Structure Optimizer"
+    description: "Use semantic landmarks to simplify page structure for users with cognitive impairments."
     difficulty: "hard"
+  - id: "form-validation"
+    name: "Advanced Form Accessibility"
+    description: "Enhance form accessibility using advanced ARIA validation states and required flags."
+    difficulty: "hard"
+
